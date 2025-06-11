@@ -1,0 +1,82 @@
+- name: Check the script and start the process
+  hosts: all
+  become: yes
+  become_user: abc
+  vars_files:
+    - vault.yml
+
+  tasks:
+
+    - name: Section 1 - Check and execute script
+      block:
+        - name: Check if script exists
+          stat:
+            path: /home/abc/example_script.sh
+          register: file_exist
+
+        - name: Fail if script does not exist
+          fail:
+            msg: "Script not found at /home/abc/example_script.sh"
+          when: not file_exist.stat.exists
+
+        - name: Execute the script
+          command: /home/abc/example_script.sh
+          register: execute_result
+
+        - name: Fail if script execution failed
+          fail:
+            msg: "Script execution failed: {{ execute_result.stderr }}"
+          when: execute_result.failed
+
+      rescue:
+        - name: Log script execution failure
+          debug:
+            msg: "❌ Error occurred in script execution block."
+
+      always:
+        - name: Script execution block completed
+          debug:
+            msg: "ℹ️ Script execution section finished."
+
+    - name: Section 2 - Check and restart process
+      block:
+        - name: Check if abc.jar process is running
+          shell: pgrep -f abc.jar
+          register: process_check
+          ignore_errors: yes
+
+        - name: Restart abc.jar if not running
+          shell: nohup java -jar /path/to/abc.jar &
+          when: process_check.rc != 0
+
+      rescue:
+        - name: Log process check/restart failure
+          debug:
+            msg: "❌ Error occurred while checking or restarting abc.jar."
+
+      always:
+        - name: Process check block completed
+          debug:
+            msg: "ℹ️ Process check section finished."
+
+    - name: Section 3 - Final verification
+      block:
+        - name: Verify abc.jar process is running
+          shell: pgrep -f abc.jar
+          register: verify_process
+          ignore_errors: yes
+
+        - name: Fail if abc.jar is not running
+          fail:
+            msg: "abc.jar is not running after restart attempt"
+          when: verify_process.rc != 0
+
+      rescue:
+        - name: Log verification failure
+          debug:
+            msg: "❌ abc.jar verification failed."
+
+      always:
+        - name: Final verification block completed
+          debug:
+            msg: "ℹ️ Final verification section finished."

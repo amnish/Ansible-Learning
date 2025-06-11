@@ -1,0 +1,50 @@
+---
+- name: Install and configure PostgreSQL
+  hosts: all
+  become: yes
+
+  vars:
+    postgres_user: myuser
+    postgres_password: mypassword
+    postgres_port: 5432
+
+  tasks:
+    - name: Install PostgreSQL
+      apt:
+        name: postgresql
+        state: present
+        update_cache: yes
+
+    - name: Ensure PostgreSQL is started and enabled
+      service:
+        name: postgresql
+        state: started
+        enabled: yes
+
+    - name: Set PostgreSQL to listen on all interfaces
+      lineinfile:
+        path: /etc/postgresql/14/main/postgresql.conf
+        regexp: '^#?listen_addresses ='
+        line: "listen_addresses = '*'"
+        notify: Restart PostgreSQL
+
+    - name: Allow remote connections in pg_hba.conf
+      lineinfile:
+        path: /etc/postgresql/14/main/pg_hba.conf
+        line: "host    all             all             0.0.0.0/0               md5"
+        create: yes
+        state: present
+        notify: Restart PostgreSQL
+
+    - name: Create PostgreSQL user
+      become_user: postgres
+      postgresql_user:
+        name: "{{ postgres_user }}"
+        password: "{{ postgres_password }}"
+        state: present
+
+  handlers:
+    - name: Restart PostgreSQL
+      service:
+        name: postgresql
+        state: restarted

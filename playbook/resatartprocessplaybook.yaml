@@ -1,0 +1,50 @@
+---
+- name: Download and run a bash script on all hosts as user abc
+  hosts: all
+  become: yes
+  become_user: abc
+  vars_files:
+    - vault.yml
+  tasks:
+    - name: Download the bash script
+      get_url:
+        url: "{{ vault_url }}"
+        dest: /home/abc/example_script.sh
+        mode: '0755'
+      register: download_result
+      ignore_errors: yes
+
+    - name: Check if the script was downloaded successfully
+      fail:
+        msg: "Failed to download the script from {{ vault_url }}"
+      when: download_result.failed
+
+    - name: Execute the bash script
+      command: /home/abc/example_script.sh
+      register: execute_result
+      when: file_exist.stat.exist
+      ignore_errors: yes
+
+    - name: Check if the script executed successfully
+      fail:
+        msg: "Failed to execute the script"
+      when: execute_result.failed
+
+    - name: Check if abc.jar process is running
+      shell: pgrep -f abc.jar
+      register: process_check
+      ignore_errors: yes
+
+    - name: Restart abc.jar process if not running
+      shell: nohup java -jar /path/to/abc.jar &
+      when: process_check.rc != 0
+
+    - name: Verify abc.jar process is running after restart
+      shell: pgrep -f abc.jar
+      register: verify_process
+      ignore_errors: yes
+
+    - name: Fail if abc.jar process is not running after restart
+      fail:
+        msg: "The process abc.jar is not running after attempted restart"
+      when: verify_process.rc != 0

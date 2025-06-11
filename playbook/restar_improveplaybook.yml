@@ -1,0 +1,48 @@
+---
+- name: check the script and start the proces
+  hosts: all
+  become: yes
+  become_user: abc
+  vars_files:
+    - vault.yml
+  tasks:
+    - name: Main block to check and execute script, and manage process
+      block:
+        - name: check if exist 
+          stat:
+            path: /home/abc/example_script.sh
+            register: file_exist
+        - name: Execute the bash script    
+          command: /home/abc/example_script.sh
+          register: execute_result
+          when: file_exist.stat.exist
+  
+
+        - name: Check if the script executed successfully
+          fail:
+            msg: "Failed to execute the script : {{execute_result.stderr}}"
+          when: execute_result.failed
+
+        - name: Check if abc.jar process is running
+          shell: pgrep -f abc.jar
+          register: process_check
+
+        - name: Restart abc.jar process if not running
+          shell: nohup java -jar /path/to/abc.jar &
+          when: process_check.rc != 0
+
+        - name: Verify abc.jar process is running after restart
+          shell: pgrep -f abc.jar
+          register: verify_process
+          ignore_errors: yes
+
+        - name: Fail if abc.jar process is not running after restart
+          fail:
+            msg: "The process abc.jar is not running after attempted restart"
+          when: verify_process.rc != 0
+          
+      rescue:
+        - name: handle the error if any
+          debug:
+            msg: "Error occured during script execution or process managment"
+          
