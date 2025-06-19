@@ -1,0 +1,2 @@
+vault_url: "https://example.com/scripts/example_script.sh"
+# ansible-playbook resatartprocessplaybook.yaml --ask-vault-pass ~/.vault_pass.txt

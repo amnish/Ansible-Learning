@@ -1,0 +1,30 @@
+---
+- name: Install PostgreSQL from RPM
+  hosts: all
+  become: yes
+  vars:
+    rpm_file: postgresql13-server.rpm
+    remote_rpm_path: /tmp/postgresql13-server.rpm
+
+  tasks:
+    - name: Copy PostgreSQL RPM to remote host
+      copy:
+        src: "{{ rpm_file }}"
+        dest: "{{ remote_rpm_path }}"
+
+    - name: Install PostgreSQL RPM
+      yum:
+        name: "{{ remote_rpm_path }}"
+        state: present
+
+    - name: Initialize PostgreSQL database
+      command: /usr/pgsql-13/bin/postgresql-13-setup initdb
+      args:
+        creates: /var/lib/pgsql/13/data/PG_VERSION
+        
+
+    - name: Enable and start PostgreSQL service
+      systemd:
+        name: postgresql-13
+        enabled: yes
+        state: started

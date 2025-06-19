@@ -1,0 +1,20 @@
+---
+- name: To start the controllers.
+  hosts: [controllers]
+  become: yes
+  become_user: "{{  fid }}"
+  tasks:
+    - name: check if file exist
+      stat:
+        path: /tmp/"{{ script_name }}"
+        register: check_file
+    - name: execute the scrip if exist.
+      command: /tmp/"{{ script_name }}"
+      register: execute_result
+      when: check_file.stat.exist
+    - name: check if controller is up
+      shell: pgrep -f abc.jar
+      register: process_check
+      retries: 3
+      delay: 5
+      until: process_check.rc == 0

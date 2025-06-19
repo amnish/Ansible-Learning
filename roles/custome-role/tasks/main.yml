@@ -1,0 +1,4 @@
+---
+- import_task: package.yml
+- import_task: message.yml
+  notify: restart nginx

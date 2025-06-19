@@ -1,0 +1,6 @@
+---
+- name: Example playbook for roles
+  hosts: all
+  remote_user: ubuntu
+  roles:
+    - custom-role

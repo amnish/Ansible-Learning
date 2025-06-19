@@ -7,19 +7,26 @@
     postgres_user: myuser
     postgres_password: mypassword
     postgres_port: 5432
+    rpm_file: postgresql13-server.rpm
+    remote_rpm_path: /tmp/postgresql13-server.rpm
 
   tasks:
     - name: Install PostgreSQL
       apt:
-        name: postgresql
+        name: "{{remote_rpm_path}}"
         state: present
         update_cache: yes
 
+    - name: Initialize PostgreSQL database
+      command: /usr/pgsql-13/bin/postgresql-13-setup initdb
+      args:
+        creates: /var/lib/pgsql/13/data/PG_VERSION
     - name: Ensure PostgreSQL is started and enabled
       service:
         name: postgresql
         state: started
         enabled: yes
+        
 
     - name: Set PostgreSQL to listen on all interfaces
       lineinfile:

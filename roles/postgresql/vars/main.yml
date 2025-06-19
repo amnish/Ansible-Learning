@@ -1,0 +1,7 @@
+---
+port: 5432
+postgres_user: myuser
+postgres_password: mypassword
+postgres_port: 5432
+rpm_file: postgresql13-server.rpm
+remote_rpm_path: /tmp/postgresql13-server.rpm
